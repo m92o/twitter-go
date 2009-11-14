@@ -1,0 +1,75 @@
+#
+# Go言語用 Twitterクライアントパッケージ
+#
+# Copyright (c) 2009 Kunio Murasawa <kunio.murasawa@gmail.com>
+#
+
+名前
+ twitter (ライブラリファイル名 twitter.a)
+
+作者
+ Kunio Murasawa <kunio.murasawa@gmail.com>
+
+対応機能
+ - タイムライン
+  - puclic_timeline
+  - friends_timeline
+  - user_timeline
+  - mentions
+
+ - ステータス
+  - update
+
+ - アカウント
+  - verify credentials
+
+取得方法
+ $ git clone git://github.com/m92o/twitter-go.git twitter-go
+
+インストール方法
+ $ make install
+ $GOROOT/pkg/<対応アーキテクチャ>/ にライブラリ twitter.a がインストールされます。
+ またサンプルプログラム tw が $GOBIN にインストールされます。
+
+使い方
+ - パッケージのインポート
+  import "twitter";
+
+ - 初期化
+  t := twitter.NewTwitter("USERNAME", "PASSWORD", SSLBOOL); //SSLはまだ未対応
+
+ - 自分のユーザ情報取得
+  t.VerifyCredentials();
+  userinfo := t.GetUser(t.UserId);
+
+ - タイムライン取得
+  statuses = t.PublicTimeline();
+
+ - アップテート（つぶやく）
+　t.Update("メッセージ");
+
+サンプルプログラム
+ sample/tw.go
+  ソースコードの USER と PASSWORD を自分のアカウントに書き換えてインストールしてください。
+ - 使い方
+  - 自分のユーザ情報取得
+   $ tw my
+
+  - タイムライン取得
+   $ tw public
+
+   $ tw friends
+
+   $ tw user
+
+   $ tw mentions 
+
+  - アップテート（つぶやく）
+   $ tw update "メッセージ"
+
+Twitter API Wiki
+ http://apiwiki.twitter.com/
+
+ライセンス
+ BSDライセンス
+ 詳細は附属のLICENCEファイルを参照

@@ -44,7 +44,7 @@ func showUser(u *twitter.User) {
 func main() {
 	var err os.Error;
 	var statuses []twitter.Status;
-    flag.Parse();
+	flag.Parse();
 
 	tw := twitter.NewTwitter(USER, PASSWORD, false);
 

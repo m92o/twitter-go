@@ -67,7 +67,7 @@ type readClose struct {
 var users map[string]User;
 
 // http send
-// 標準パッケージのhttp.sendを元に改造した
+// 標準パッケージのhttp.sendを元に改造した（ベーシック認証, SSL等に対応させる為）
 // Caller should close res.Body when done reading it.
 func send(req *http.Request) (res *http.Response, err os.Error) {
 	conn, err := net.Dial("tcp", "", req.URL.Host);

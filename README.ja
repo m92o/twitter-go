@@ -49,23 +49,23 @@
 　t.Update("メッセージ");
 
 サンプルプログラム
- sample/tw.go
+ src/cmd/twgo.go
   ソースコードの USER と PASSWORD を自分のアカウントに書き換えてインストールしてください。
  - 使い方
   - 自分のユーザ情報取得
-   $ tw my
+   $ twgo my
 
   - タイムライン取得
-   $ tw public
+   $ twgo public
 
-   $ tw friends
+   $ twgo friends
 
-   $ tw user
+   $ twgo user
 
-   $ tw mentions 
+   $ twgo mentions
 
   - アップテート（つぶやく）
-   $ tw update "メッセージ"
+   $ twgo update "メッセージ"
 
 Twitter API Wiki
  http://apiwiki.twitter.com/

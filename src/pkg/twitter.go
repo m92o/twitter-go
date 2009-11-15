@@ -133,7 +133,7 @@ const (
 	OPTION_FriendsTimeline_Page = "?page=";
 )
 // statuses friends_timeline
-func (self *Twitter) FriendsTimeline(options *map[string] uint) (statuses []Status, err os.Error) {
+func (self *Twitter) FriendsTimeline(options map[string] uint) (statuses []Status, err os.Error) {
 	const path = "/statuses/friends_timeline.json";
 
 	return self.timeline(path, options, self.Username, self.Password, self.useSsl);
@@ -149,7 +149,7 @@ const (
 	OPTION_UserTimeline_Page = "?page=";
 )
 // statuses user_timeline
-func (self *Twitter) UserTimeline(options *map[string] uint) (statuses []Status, err os.Error) {
+func (self *Twitter) UserTimeline(options map[string] uint) (statuses []Status, err os.Error) {
 	const path = "/statuses/user_timeline.json";
 
 	return self.timeline(path, options, self.Username, self.Password, self.useSsl);
@@ -163,7 +163,7 @@ const (
 	OPTION_Mentions_Page = "?page=";
 )
 // statuses mentions
-func (self *Twitter) Mentions(options *map[string] uint) (statuses []Status, err os.Error) {
+func (self *Twitter) Mentions(options map[string] uint) (statuses []Status, err os.Error) {
 	const path = "/statuses/mentions.json";
 
 	return self.timeline(path, options, self.Username, self.Password, self.useSsl);
@@ -175,12 +175,12 @@ const (
 )
 // GET lists
 //  user --- UserId or ScreenName
-func (self *Twitter) GetLists(user string, options *map[string] int) (lists []List, err os.Error) {
+func (self *Twitter) GetLists(user string, options map[string] int) (lists []List, err os.Error) {
 	path := fmt.Sprintf("/1/%s/lists.json", user);
 
 	// option parameters
 	if options != nil {
-		for opt, val := range *options {
+		for opt, val := range options {
 			path += opt + strconv.Itoa(val);
 		}
 	}
@@ -215,7 +215,7 @@ const (
 )
 // statuses mentions
 //  user --- UserId or ScreenName
-func (self *Twitter) ListStatuses(user, listId string, options *map[string] uint) (statuses []Status, err os.Error) {
+func (self *Twitter) ListStatuses(user, listId string, options map[string] uint) (statuses []Status, err os.Error) {
 	path := fmt.Sprintf("/1/%s/lists/%s/statuses.json", user, listId);
 
 	return self.timeline(path, options, self.Username, self.Password, self.useSsl);
@@ -368,12 +368,12 @@ func (self *Twitter) setUser(elem json.Json) {
 }
 
 // timeline取得
-func (self *Twitter) timeline(path string, options *map[string] uint, user, pass string, useSsl bool) (statuses []Status, err os.Error) {
+func (self *Twitter) timeline(path string, options map[string] uint, user, pass string, useSsl bool) (statuses []Status, err os.Error) {
 	optpath := path;
 
 	// option parameters
 	if options != nil {
-		for opt, val := range *options {
+		for opt, val := range options {
 			optpath += opt + strconv.Uitoa(val);
 		}
 	}

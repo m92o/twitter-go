@@ -24,7 +24,7 @@ func main() {
 
 	// 設定ファイルから
 	if acc, err = readConfFile(); err != nil {
-		fmt.Println(err);
+		os.Stderr.WriteString(err.String() + "\n");
         os.Exit(1);
 	}
 	tw := twitter.NewTwitter(acc.user, acc.password, false);
@@ -38,7 +38,7 @@ func main() {
 		}
 	case "user":
 		opts := map[string]uint{twitter.OPTION_UserTimeline_Count: 5};
-		if statuses, err = tw.UserTimeline(&opts); err == nil {
+		if statuses, err = tw.UserTimeline(opts); err == nil {
 			showTimeline(statuses);
 		}
 	case "mentions":
@@ -65,7 +65,7 @@ func main() {
 	}
 
 	if err != nil {
-		fmt.Println(err);
+		os.Stderr.WriteString(err.String() + "\n");
         os.Exit(1);
 	}
 

@@ -40,7 +40,7 @@
 
  - 自分のユーザ情報取得
   t.VerifyCredentials();
-  userinfo := t.GetUser(t.UserId);
+  userinfo := t.Users[t.UserId];
 
  - タイムライン取得
   statuses = t.PublicTimeline();

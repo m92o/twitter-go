@@ -24,7 +24,7 @@ func showTimeline(statuses []twitter.Status) {
 	}
 }
 
-func showUser(u *twitter.User) {
+func showUser(u twitter.User) {
 	fmt.Printf("Id: %s\n", u.Id);
 	fmt.Printf("Name: %s\n", u.Name);
 	fmt.Printf("ScreenName: %s\n", u.ScreenName);
@@ -72,7 +72,7 @@ func main() {
 		}
 	case "my":
 		err = tw.VerifyCredentials();
-		if u := tw.GetUser(tw.UserId); u != nil {
+		if u, ok := tw.Users[tw.UserId]; ok == true {
 			showUser(u);
 		}
 	}

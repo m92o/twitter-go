@@ -22,14 +22,6 @@ import (
 	"encoding/base64";
 )
 
-// Twitter情報
-type Twitter struct {
-	Username string;
-	Password string;
-	UserId string;
-	useSsl bool;
-}
-
 // ユーザ情報 (全部stringにしちゃったけど良い?)
 type User struct {
 	Id string;
@@ -63,16 +55,13 @@ type readClose struct {
 	io.Closer;
 }
 
-// ユーザ情報一覧 UserIdがキー
-var users map[string]User;
-
 // http send
 // 標準パッケージのhttp.sendを元に改造した（ベーシック認証, SSL等に対応させる為）
 // Caller should close res.Body when done reading it.
 func send(req *http.Request) (res *http.Response, err os.Error) {
 	conn, err := net.Dial("tcp", "", req.URL.Host);
 	if err != nil {
-		return nil, err
+		return nil, err;
 	}
 
 	err = req.Write(conn);
@@ -119,6 +108,7 @@ func request(method int, path, body, user, pass string, useSsl bool) (res *http.
 		url = "http://" + HOST + ":80";
 	} else {
 		url = "https://" + HOST + ":443";
+		return nil, os.NewError("SSL is not implemented yet.");
 	}
 
 	if req.URL, err = http.ParseURL(url + path); err != nil {
@@ -136,7 +126,7 @@ func request(method int, path, body, user, pass string, useSsl bool) (res *http.
 	}
 
 	// header
-	req.Header = make(map[string]string);
+	req.Header = make(map[string] string);
 
 	// authorization
 	if user != "" && pass != "" {
@@ -183,7 +173,7 @@ func encode(str string) (enc string) {
     return enc;
 }
 
-func setUser(elem json.Json) {
+func (t *Twitter) setUser(elem json.Json) {
 	var user User;
 
 	user.Id = elem.Get("id").String();
@@ -201,11 +191,11 @@ func setUser(elem json.Json) {
 	user.TimeZone = elem.Get("time_zone").String();
 	user.StatusesCount = elem.Get("statuses_count").String();
 
-	users[user.Id] = user;
+	t.Users[user.Id] = user;
 }
 
 // timeline取得
-func timeline(path string, options *map[string]uint, user, pass string, useSsl bool) (statuses []Status, err os.Error) {
+func (t *Twitter) timeline(path string, options *map[string] uint, user, pass string, useSsl bool) (statuses []Status, err os.Error) {
 	optpath := path;
 
 	// option parameters
@@ -239,7 +229,7 @@ func timeline(path string, options *map[string]uint, user, pass string, useSsl b
 			statuses[i].UserId = id;
 
 			// user
-			setUser(user);
+			t.setUser(user);
 		}
 	}
 	res.Body.Close();
@@ -247,23 +237,17 @@ func timeline(path string, options *map[string]uint, user, pass string, useSsl b
 	return;
 }
 
+// Twitter情報
+type Twitter struct {
+	Username string;
+	Password string;
+	UserId string;
+	Users map[string] User; // ユーザ情報一覧 UserIdがキー
+	useSsl bool;
+}
 // コンストラクタ
 func NewTwitter(user, pass string, useSsl bool) *Twitter {
-	users = make(map[string]User);
-
-	return &Twitter{user, pass, "", useSsl};
-}
-
-// ユーザ情報取得
-func (t *Twitter) GetUser(id string) (user *User) {
-	var ok bool;
-
-	user = new(User);
-	if *user, ok = users[id]; ok == false {
-		return nil;
-	}
-
-	return;
+	return &Twitter{user, pass, "", make(map[string] User), useSsl};
 }
 
 // verify credentials（自分のユーザ情報を取得したい時など）
@@ -280,7 +264,7 @@ func (t *Twitter) VerifyCredentials() (err os.Error) {
 		// user
 		user, _, _ := json.StringToJson(string(body));
 		t.UserId = user.Get("id").String();
-		setUser(user);
+		t.setUser(user);
 	}
 	res.Body.Close();
 
@@ -312,7 +296,7 @@ func (t *Twitter) Update(message string) (err os.Error) {
 func (t *Twitter) PublicTimeline() (statuses []Status, err os.Error) {
 	const path = "/statuses/public_timeline.json";
 
-	return timeline(path, nil, "", "", t.useSsl);
+	return t.timeline(path, nil, "", "", t.useSsl);
 }
 
 // FiendsTimelineの引数マップキーに使用
@@ -323,10 +307,10 @@ const (
 	OPTION_FriendsTimeline_Page = "?page=";
 )
 // statuses friends_timeline
-func (t *Twitter) FriendsTimeline(options *map[string]uint) (statuses []Status, err os.Error) {
+func (t *Twitter) FriendsTimeline(options *map[string] uint) (statuses []Status, err os.Error) {
 	const path = "/statuses/friends_timeline.json";
 
-	return timeline(path, options, t.Username, t.Password, t.useSsl);
+	return t.timeline(path, options, t.Username, t.Password, t.useSsl);
 }
 
 // UserTimelineの引数マップキーに使用
@@ -339,10 +323,10 @@ const (
 	OPTION_UserTimeline_Page = "?page=";
 )
 // statuses user_timeline
-func (t *Twitter) UserTimeline(options *map[string]uint) (statuses []Status, err os.Error) {
+func (t *Twitter) UserTimeline(options *map[string] uint) (statuses []Status, err os.Error) {
 	const path = "/statuses/user_timeline.json";
 
-	return timeline(path, options, t.Username, t.Password, t.useSsl);
+	return t.timeline(path, options, t.Username, t.Password, t.useSsl);
 }
 
 // Mentionsの引数マップキーに使用
@@ -353,8 +337,8 @@ const (
 	OPTION_Mentions_Page = "?page=";
 )
 // statuses mentions
-func (t *Twitter) Mentions(options *map[string]uint) (statuses []Status, err os.Error) {
+func (t *Twitter) Mentions(options *map[string] uint) (statuses []Status, err os.Error) {
 	const path = "/statuses/mentions.json";
 
-	return timeline(path, options, t.Username, t.Password, t.useSsl);
+	return t.timeline(path, options, t.Username, t.Password, t.useSsl);
 }

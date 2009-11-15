@@ -23,38 +23,55 @@
  - アカウント
   - verify credentials
 
+ - リスト
+  - lists (index)
+  - list statuses
+
 取得方法
  $ git clone git://github.com/m92o/twitter-go.git twitter-go
 
 インストール方法
  $ make install
  $GOROOT/pkg/<対応アーキテクチャ>/ にライブラリ twitter.a がインストールされます。
- またサンプルプログラム tw が $GOBIN にインストールされます。
+ またサンプルプログラム twgoコマンドが $GOBIN にインストールされます。
 
 使い方
  - パッケージのインポート
   import "twitter";
 
  - 初期化
-  t := twitter.NewTwitter("USERNAME", "PASSWORD", SSLBOOL); //SSLはまだ未対応
+  t := twitter.NewTwitter("USERNAME", "PASSWORD", false);
 
  - 自分のユーザ情報取得
   t.VerifyCredentials();
   userinfo := t.Users[t.UserId];
 
  - タイムライン取得
-  statuses = t.PublicTimeline();
+  statuses := t.PublicTimeline();
+  statuses := t.FriendsTimeline(nil);
+  statuses "= t.UserTimeline(nil);
+  statuses "= t.Mentions(nil);
 
  - アップテート（つぶやく）
 　t.Update("メッセージ");
 
+ - リスト一覧取得
+  lists := t.GetList(userId);
+
+ - リストステータス取得（タイムライン）
+  statuses := t.GetLists(userId, listId, nil);
+
 サンプルプログラム
- src/cmd/twgo.go
-  ソースコードの USER と PASSWORD を自分のアカウントに書き換えてインストールしてください。
+ src/cmd/twgo.go (twgoコマンド)
 
  - 使い方
+  設定ファイル「.twgo.conf」にユーザ、パスワードを記述しホームディレクトリに置いてください
   - 自分のユーザ情報取得
    $ twgo my
+
+  - リスト一覧
+   $ twgo lists USER
+    --- USER には ユーザID 又は スクリーン名 を指定
 
   - タイムライン取得
    $ twgo public
@@ -64,6 +81,9 @@
    $ twgo user
 
    $ twgo mentions
+
+   $ twgo list USER LIST_ID
+    --- USER には ユーザID 又は スクリーン名 を指定
 
   - アップテート（つぶやく）
    $ twgo update "メッセージ"

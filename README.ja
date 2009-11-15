@@ -49,8 +49,8 @@
  - タイムライン取得
   statuses := t.PublicTimeline();
   statuses := t.FriendsTimeline(nil);
-  statuses "= t.UserTimeline(nil);
-  statuses "= t.Mentions(nil);
+  statuses := t.UserTimeline(nil);
+  statuses := t.Mentions(nil);
 
  - アップテート（つぶやく）
 　t.Update("メッセージ");

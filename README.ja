@@ -27,6 +27,9 @@
   - lists (index)
   - list statuses
 
+ - サーチ
+  - users
+
 取得方法
  $ git clone git://github.com/m92o/twitter-go.git twitter-go
 
@@ -60,6 +63,9 @@
  - リストステータス取得（タイムライン）
   statuses, users := t.GetLists(userId, listId, nil);
 
+ - ユーザサーチ
+  users := t.UsersSearch(user, nil);
+
 サンプルプログラム
  src/cmd/twgo.go (twgoコマンド)
 
@@ -86,6 +92,9 @@
 
   - アップテート（つぶやく）
    $ twgo update "メッセージ"
+
+  - ユーザサーチ
+   $ twgo search ユーザ名
 
 Twitter API Wiki
  http://apiwiki.twitter.com/

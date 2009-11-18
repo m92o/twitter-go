@@ -77,7 +77,7 @@ func NewTwitter(user, pass string, useSsl bool) *Twitter {
 func (self *Twitter) VerifyCredentials() (user User, err os.Error) {
 	const path = "/account/verify_credentials.json";
 
-	res, err := request(GET, path, "", self.Username, self.Password, self.useSsl);
+	res, err := request(GET, HOST, path, "", self.Username, self.Password, self.useSsl);
 	if res.StatusCode != 200 {
 		err = os.ErrorString(res.Status);
 		return;
@@ -107,7 +107,7 @@ func (self *Twitter) Update(message string) (err os.Error) {
 //	body := param + http.URLEscape(message);
 	body := param + encode(message);
 
-	res, err := request(POST, path, body, self.Username, self.Password, self.useSsl);
+	res, err := request(POST, HOST, path, body, self.Username, self.Password, self.useSsl);
 	if res.StatusCode != 200 {
 		err = os.ErrorString(res.Status);
 		return;
@@ -185,7 +185,7 @@ func (self *Twitter) GetLists(user string, options map[string] int) (lists []Lis
 		}
 	}
 
-	res, err := request(GET, path, "", self.Username, self.Password, self.useSsl);
+	res, err := request(GET, HOST, path, "", self.Username, self.Password, self.useSsl);
 	if res.StatusCode != 200 {
 		err = os.ErrorString(res.Status);
 		return;
@@ -220,6 +220,41 @@ func (self *Twitter) ListStatuses(user, list string, options map[string] uint) (
 	path := fmt.Sprintf("/1/%s/lists/%s/statuses.json", user, list);
 
 	return self.timeline(path, options, self.Username, self.Password, self.useSsl);
+}
+
+// UsersSearchの引数マップキーに使用
+const (
+	OPTION_UsersSearch_PerPage = "?per_page=";
+	OPTION_UsersSearch_Page = "?page=";
+)
+// users search
+func (self *Twitter) UsersSearch(user string, options map[string] uint) (users []User, err os.Error) {
+	path := fmt.Sprintf("/1/users/search.json?q=%s", user);
+
+	// option parameters
+	if options != nil {
+		for opt, val := range options {
+			path += opt + strconv.Uitoa(val);
+		}
+	}
+
+	res, err := request(GET, HOST, path, "", self.Username, self.Password, self.useSsl);
+	if res.StatusCode != 200 {
+		err = os.ErrorString(res.Status);
+		return;
+	}
+
+	// response body
+	if body, err := io.ReadAll(res.Body); err == nil {
+		js, _, _ := json.StringToJson(string(body));
+		users = make([]User, js.Len());
+		for i := 0; i < js.Len(); i++ {
+			users[i] = parseUser(js.Elem(i));
+		}
+	}
+	res.Body.Close();
+
+	return;
 }
 
 // 標準パッケージのhttpから持ってきた
@@ -268,19 +303,18 @@ const (
 	GET = iota;
 	POST;
 )
+const HOST = "twitter.com";
 // http request
 // Caller should close res.Body when done reading it.
-func request(method int, path, body, user, pass string, useSsl bool) (res *http.Response, err os.Error) {
-	const HOST = "twitter.com";
-
+func request(method int, host, path, body, user, pass string, useSsl bool) (res *http.Response, err os.Error) {
 	var req http.Request;
 	var url string;
 
 	// url
 	if useSsl != true {
-		url = "http://" + HOST + ":80";
+		url = "http://" + host + ":80";
 	} else {
-		url = "https://" + HOST + ":443";
+		url = "https://" + host + ":443";
 		return nil, os.NewError("SSL is not implemented yet.");
 	}
 
@@ -357,7 +391,7 @@ func (self *Twitter) timeline(path string, options map[string] uint, user, pass 
 		}
 	}
 
-	res, err := request(GET, optpath, "", user, pass, useSsl);
+	res, err := request(GET, HOST, optpath, "", user, pass, useSsl);
 	if res.StatusCode != 200 {
 		err = os.ErrorString(res.Status);
 		return;

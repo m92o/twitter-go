@@ -17,10 +17,11 @@ import (
 func main() {
 	var err os.Error;
 	var statuses []twitter.Status;
-//	var users map[string] twitter.User;
 	var lists []twitter.List;
 	var acc account;
 	var user twitter.User;
+	var users []twitter.User;
+//	var users map[string] twitter.User;
 
 	flag.Parse();
 
@@ -63,6 +64,10 @@ func main() {
 		user, err = tw.VerifyCredentials();
 		if err == nil {
 			showUser(user);
+		}
+	case "search":
+		if users, err = tw.UsersSearch(flag.Arg(1), nil); err == nil {
+			showUsers(users);
 		}
 	}
 
@@ -124,5 +129,11 @@ func showUser(u twitter.User) {
 func showLists(lists []twitter.List) {
 	for _, l := range lists {
 		fmt.Println(l.Id, l.Name, l.FullName, l.Slug, l.MemberCount, l.Uri, l.Mode, l.UserId);
+	}
+}
+
+func showUsers(users []twitter.User) {
+	for _, u := range users {
+		fmt.Println(u.Id, u.Name, u.ScreenName);
 	}
 }

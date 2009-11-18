@@ -43,14 +43,13 @@
   t := twitter.NewTwitter("USERNAME", "PASSWORD", false);
 
  - 自分のユーザ情報取得
-  t.VerifyCredentials();
-  userinfo := t.Users[t.UserId];
+  user := t.VerifyCredentials();
 
  - タイムライン取得
-  statuses := t.PublicTimeline();
-  statuses := t.FriendsTimeline(nil);
-  statuses := t.UserTimeline(nil);
-  statuses := t.Mentions(nil);
+  statuses, users := t.PublicTimeline();
+  statuses, users := t.FriendsTimeline(nil);
+  statuses, users := t.UserTimeline(nil);
+  statuses, users := t.Mentions(nil);
 
  - アップテート（つぶやく）
 　t.Update("メッセージ");
@@ -59,7 +58,7 @@
   lists := t.GetList(userId);
 
  - リストステータス取得（タイムライン）
-  statuses := t.GetLists(userId, listId, nil);
+  statuses, users := t.GetLists(userId, listId, nil);
 
 サンプルプログラム
  src/cmd/twgo.go (twgoコマンド)

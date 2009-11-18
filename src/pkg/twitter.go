@@ -66,16 +66,15 @@ type Twitter struct {
 	Username string;
 	Password string;
 	UserId string;
-	Users map[string] User; // ユーザ情報 UserIdがキー
 	useSsl bool;
 }
 // コンストラクタ
 func NewTwitter(user, pass string, useSsl bool) *Twitter {
-	return &Twitter{user, pass, "", make(map[string] User), useSsl};
+	return &Twitter{user, pass, "", useSsl};
 }
 
 // verify credentials（自分のユーザ情報を取得したい時など）
-func (self *Twitter) VerifyCredentials() (err os.Error) {
+func (self *Twitter) VerifyCredentials() (user User, err os.Error) {
 	const path = "/account/verify_credentials.json";
 
 	res, err := request(GET, path, "", self.Username, self.Password, self.useSsl);
@@ -87,9 +86,10 @@ func (self *Twitter) VerifyCredentials() (err os.Error) {
 	// response body
 	if body, err := io.ReadAll(res.Body); err == nil {
 		// user
-		user, _, _ := json.StringToJson(string(body));
-		self.UserId = user.Get("id").String();
-		self.setUser(user);
+		js, _, _ := json.StringToJson(string(body));
+		self.UserId = js.Get("id").String();
+
+		user = parseUser(js);
 	}
 	res.Body.Close();
 
@@ -119,7 +119,7 @@ func (self *Twitter) Update(message string) (err os.Error) {
 }
 
 // statuses friends_timeline
-func (self *Twitter) PublicTimeline() (statuses []Status, err os.Error) {
+func (self *Twitter) PublicTimeline() (statuses []Status, users map[string] User, err os.Error) {
 	const path = "/statuses/public_timeline.json";
 
 	return self.timeline(path, nil, "", "", self.useSsl);
@@ -133,7 +133,7 @@ const (
 	OPTION_FriendsTimeline_Page = "?page=";
 )
 // statuses friends_timeline
-func (self *Twitter) FriendsTimeline(options map[string] uint) (statuses []Status, err os.Error) {
+func (self *Twitter) FriendsTimeline(options map[string] uint) (statuses []Status, users map[string] User, err os.Error) {
 	const path = "/statuses/friends_timeline.json";
 
 	return self.timeline(path, options, self.Username, self.Password, self.useSsl);
@@ -149,7 +149,7 @@ const (
 	OPTION_UserTimeline_Page = "?page=";
 )
 // statuses user_timeline
-func (self *Twitter) UserTimeline(options map[string] uint) (statuses []Status, err os.Error) {
+func (self *Twitter) UserTimeline(options map[string] uint) (statuses []Status, users map[string] User, err os.Error) {
 	const path = "/statuses/user_timeline.json";
 
 	return self.timeline(path, options, self.Username, self.Password, self.useSsl);
@@ -163,7 +163,7 @@ const (
 	OPTION_Mentions_Page = "?page=";
 )
 // statuses mentions
-func (self *Twitter) Mentions(options map[string] uint) (statuses []Status, err os.Error) {
+func (self *Twitter) Mentions(options map[string] uint) (statuses []Status, users map[string] User, err os.Error) {
 	const path = "/statuses/mentions.json";
 
 	return self.timeline(path, options, self.Username, self.Password, self.useSsl);
@@ -215,8 +215,9 @@ const (
 )
 // statuses mentions
 //  user --- UserId or ScreenName
-func (self *Twitter) ListStatuses(user, listId string, options map[string] uint) (statuses []Status, err os.Error) {
-	path := fmt.Sprintf("/1/%s/lists/%s/statuses.json", user, listId);
+//  list --- ListId or ListName
+func (self *Twitter) ListStatuses(user, list string, options map[string] uint) (statuses []Status, users map[string] User, err os.Error) {
+	path := fmt.Sprintf("/1/%s/lists/%s/statuses.json", user, list);
 
 	return self.timeline(path, options, self.Username, self.Password, self.useSsl);
 }
@@ -345,30 +346,8 @@ func encode(str string) (enc string) {
     return enc;
 }
 
-// ユーザ情報登録
-func (self *Twitter) setUser(elem json.Json) {
-	var user User;
-
-	user.Id = elem.Get("id").String();
-	user.Name = elem.Get("name").String();
-	user.ScreenName = elem.Get("screen_name").String();
-	user.Location = elem.Get("location").String();
-	user.Description = elem.Get("description").String();
-	user.ProfileImageUrl = elem.Get("profile_image_url").String();
-	user.Url = elem.Get("url").String();
-	user.Protected = elem.Get("protected").String();
-	user.FollowersCount = elem.Get("followers_count").String();
-	user.FriendsCount = elem.Get("friends_count").String();
-	user.FavouritesCount = elem.Get("favourites_count").String();
-	user.UtcOffset = elem.Get("utc_offset").String();
-	user.TimeZone = elem.Get("time_zone").String();
-	user.StatusesCount = elem.Get("statuses_count").String();
-
-	self.Users[user.Id] = user;
-}
-
 // timeline取得
-func (self *Twitter) timeline(path string, options map[string] uint, user, pass string, useSsl bool) (statuses []Status, err os.Error) {
+func (self *Twitter) timeline(path string, options map[string] uint, user, pass string, useSsl bool) (statuses []Status, users map[string] User, err os.Error) {
 	optpath := path;
 
 	// option parameters
@@ -388,6 +367,7 @@ func (self *Twitter) timeline(path string, options map[string] uint, user, pass 
 	if body, err := io.ReadAll(res.Body); err == nil {
 		js, _, _ := json.StringToJson(string(body));
 		statuses = make([]Status, js.Len());
+		users = make(map[string] User);
 		re, _ := regexp.Compile("<a[^>]*>(.*)</a>");
 		for i := 0; i < js.Len(); i++ {
 			// status
@@ -399,11 +379,11 @@ func (self *Twitter) timeline(path string, options map[string] uint, user, pass 
 				statuses[i].Source = srcs[1];
 			}
 			user := status.Get("user");
-			id := user.Get("id").String();
-			statuses[i].UserId = id;
+			uid := user.Get("id").String();
+			statuses[i].UserId = uid;
 
 			// user
-			self.setUser(user);
+			users["uid"] = parseUser(user);
 		}
 	}
 	res.Body.Close();
@@ -421,6 +401,26 @@ func parseList(elem json.Json) (list List) {
 	list.Uri = elem.Get("uri").String();
 	list.Mode = elem.Get("mode").String();
 	list.UserId = elem.Get("user").Get("id").String();
+
+	return;
+}
+
+// Userパース
+func parseUser(elem json.Json) (user User) {
+	user.Id = elem.Get("id").String();
+	user.Name = elem.Get("name").String();
+	user.ScreenName = elem.Get("screen_name").String();
+	user.Location = elem.Get("location").String();
+	user.Description = elem.Get("description").String();
+	user.ProfileImageUrl = elem.Get("profile_image_url").String();
+	user.Url = elem.Get("url").String();
+	user.Protected = elem.Get("protected").String();
+	user.FollowersCount = elem.Get("followers_count").String();
+	user.FriendsCount = elem.Get("friends_count").String();
+	user.FavouritesCount = elem.Get("favourites_count").String();
+	user.UtcOffset = elem.Get("utc_offset").String();
+	user.TimeZone = elem.Get("time_zone").String();
+	user.StatusesCount = elem.Get("statuses_count").String();
 
 	return;
 }

@@ -17,8 +17,10 @@ import (
 func main() {
 	var err os.Error;
 	var statuses []twitter.Status;
+//	var users map[string] twitter.User;
 	var lists []twitter.List;
 	var acc account;
+	var user twitter.User;
 
 	flag.Parse();
 
@@ -33,20 +35,20 @@ func main() {
 	case "update":
 		err = tw.Update(flag.Arg(1));
 	case "friends":
-		if statuses, err = tw.FriendsTimeline(nil); err == nil {
+		if statuses, _, err = tw.FriendsTimeline(nil); err == nil {
 			showTimeline(statuses);
 		}
 	case "user":
 		opts := map[string]uint{twitter.OPTION_UserTimeline_Count: 5};
-		if statuses, err = tw.UserTimeline(opts); err == nil {
+		if statuses, _, err = tw.UserTimeline(opts); err == nil {
 			showTimeline(statuses);
 		}
 	case "mentions":
-		if statuses, err = tw.Mentions(nil); err == nil {
+		if statuses, _, err = tw.Mentions(nil); err == nil {
 			showTimeline(statuses);
 		}
 	case "public":
-		if statuses, err = tw.PublicTimeline(); err == nil {
+		if statuses, _, err = tw.PublicTimeline(); err == nil {
 			showTimeline(statuses);
 		}
 	case "lists":
@@ -54,13 +56,13 @@ func main() {
 			showLists(lists);
 		}
 	case "list":
-		if statuses, err = tw.ListStatuses(flag.Arg(1), flag.Arg(2), nil); err == nil {
+		if statuses, _, err = tw.ListStatuses(flag.Arg(1), flag.Arg(2), nil); err == nil {
 			showTimeline(statuses);
 		}
 	case "my":
-		err = tw.VerifyCredentials();
-		if u, ok := tw.Users[tw.UserId]; ok == true {
-			showUser(u);
+		user, err = tw.VerifyCredentials();
+		if err == nil {
+			showUser(user);
 		}
 	}
 

@@ -39,6 +39,10 @@ func main() {
 		if statuses, _, err = tw.FriendsTimeline(nil); err == nil {
 			showTimeline(statuses);
 		}
+	case "home":
+		if statuses, _, err = tw.HomeTimeline(nil); err == nil {
+			showTimeline(statuses);
+		}
 	case "user":
 		opts := map[string]uint{twitter.OPTION_UserTimeline_Count: 5};
 		if statuses, _, err = tw.UserTimeline(opts); err == nil {

@@ -126,6 +126,20 @@ func (self *Twitter) PublicTimeline() (statuses []Status, users map[string] User
 	return self.timeline(path, nil, "", "", self.useSsl);
 }
 
+// HomeTimelineの引数マップキーに使用
+const (
+	OPTION_HomeTimeline_SinceId = "?since_id=";
+	OPTION_HomeTimeline_MaxId = "?max_id=";
+	OPTION_HomeTimeline_Count = "?count=";
+	OPTION_HomeTimeline_Page = "?page=";
+)
+// statuses home_timeline
+func (self *Twitter) HomeTimeline(options map[string] uint) (statuses []Status, users map[string] User, err os.Error) {
+	const path = "/statuses/home_timeline.json";
+
+	return self.timeline(path, options, self.Username, self.Password, self.useSsl);
+}
+
 // FiendsTimelineの引数マップキーに使用
 const (
 	OPTION_FriendsTimeline_SinceId = "?since_id=";

@@ -128,7 +128,7 @@ func showUser(u twitter.User) {
 
 func showLists(lists []twitter.List) {
 	for _, l := range lists {
-		fmt.Println(l.Id, l.Name, l.FullName, l.Slug, l.MemberCount, l.Uri, l.Mode, l.UserId);
+		fmt.Println(l.Id, l.Name, l.FullName, l.Slug, l.Description, l.MemberCount, l.Uri, l.Mode, l.UserId);
 	}
 }
 

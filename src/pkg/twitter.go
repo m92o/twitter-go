@@ -55,6 +55,7 @@ type List struct {
 	Name string;
 	FullName string;
 	Slug string;
+	Description string;
 	MemberCount string;
 	Uri string;
 	Mode string;
@@ -430,6 +431,7 @@ func parseList(elem json.Json) (list List) {
 	list.Id = elem.Get("id").String();
 	list.Name = elem.Get("name").String();
 	list.FullName = elem.Get("full_name").String();
+	list.Description = elem.Get("description").String();
 	list.Slug = elem.Get("slug").String();
 	list.MemberCount = elem.Get("member_count").String();
 	list.Uri = elem.Get("uri").String();

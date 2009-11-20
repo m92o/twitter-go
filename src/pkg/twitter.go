@@ -97,6 +97,47 @@ func (self *Twitter) VerifyCredentials() (user User, err os.Error) {
 	return;
 }
 
+type Rate struct {
+	RemainingHits uint;
+	HourlyLimit uint;
+	ResetTime string;
+	ResetTimeInSeconds uint;
+}
+// rate limit status
+func (self *Twitter) RateLimitStatus(ipRate bool) (rate Rate, err os.Error) {
+	const path = "/account/rate_limit_status.json";
+	var user, pass string;
+
+	if ipRate == true {
+		// IP's rate
+		user = "";
+		pass = "";
+	} else {
+		// User's rate
+		user = self.Username;
+		pass = self.Password;
+	}
+
+	res, err := request(GET, HOST, path, "", user, pass, self.useSsl);
+	if res.StatusCode != 200 {
+		err = os.ErrorString(res.Status);
+		return;
+	}
+
+	// response body
+	if body, err := io.ReadAll(res.Body); err == nil {
+		// rate limit
+		js, _, _ := json.StringToJson(string(body));
+		rate.RemainingHits, _ = strconv.Atoui(js.Get("remaining_hits").String());
+		rate.HourlyLimit, _ = strconv.Atoui(js.Get("hourly_limit").String());
+		rate.ResetTime = js.Get("reset_time").String();
+		rate.ResetTimeInSeconds, _ = strconv.Atoui(js.Get("reset_time_in_seconds").String());
+	}
+	res.Body.Close();
+
+	return;
+}
+
 // statuses update（つぶやき）
 func (self *Twitter) Update(message string) (err os.Error) {
 	const (

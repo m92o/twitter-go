@@ -22,6 +22,7 @@ func main() {
 	var user twitter.User;
 	var users []twitter.User;
 //	var users map[string] twitter.User;
+	var rate twitter.Rate;
 
 	flag.Parse();
 
@@ -68,6 +69,11 @@ func main() {
 		user, err = tw.VerifyCredentials();
 		if err == nil {
 			showUser(user);
+		}
+	case "rate":
+		rate, err = tw.RateLimitStatus(false);
+		if err == nil {
+			showRate(rate);
 		}
 	case "search":
 		if users, err = tw.UsersSearch(flag.Arg(1), nil); err == nil {
@@ -128,6 +134,13 @@ func showUser(u twitter.User) {
 	fmt.Printf("UtcOffset: %s\n", u.UtcOffset);
 	fmt.Printf("TimeZone: %s\n", u.TimeZone);
 	fmt.Printf("StatusesCount: %s\n", u.StatusesCount);
+}
+
+func showRate(r twitter.Rate) {
+	fmt.Printf("RemainingHits: %d\n", r.RemainingHits);
+	fmt.Printf("HourlyLimit: %d\n", r.HourlyLimit);
+	fmt.Printf("ResetTime: %s\n", r.ResetTime);
+	fmt.Printf("ResetTimeInSeconds: %d\n", r.ResetTimeInSeconds);
 }
 
 func showLists(lists []twitter.List) {

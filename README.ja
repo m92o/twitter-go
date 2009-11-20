@@ -23,6 +23,7 @@
 
  - アカウント
   - verify credentials
+  - rate limit status
 
  - リスト
   - lists (index)
@@ -67,6 +68,9 @@
 
  - ユーザサーチ
   users := t.UsersSearch(user, nil);
+
+ - リミットステータス
+  rate := t.RateLimitStatus(false);
 
 サンプルプログラム
  src/cmd/twgo.go (twgoコマンド)

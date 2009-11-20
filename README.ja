@@ -14,6 +14,7 @@
  - タイムライン
   - puclic_timeline
   - friends_timeline
+  - home_timeline
   - user_timeline
   - mentions
 
@@ -51,6 +52,7 @@
  - タイムライン取得
   statuses, users := t.PublicTimeline();
   statuses, users := t.FriendsTimeline(nil);
+  statuses, users := t.HomeTimeline(nil);
   statuses, users := t.UserTimeline(nil);
   statuses, users := t.Mentions(nil);
 

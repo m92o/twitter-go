@@ -465,8 +465,11 @@ func (self *Twitter) timeline(path string, options map[string] uint, user, pass 
 			statuses[i].CreatedAt = status.Get("created_at").String();
 			statuses[i].Id = status.Get("id").String();
 			statuses[i].Text = status.Get("text").String();
-			if srcs := re.MatchStrings(status.Get("source").String()); srcs != nil {
+			src := status.Get("source").String();
+			if srcs := re.MatchStrings(src); len(srcs) == 2 {
 				statuses[i].Source = srcs[1];
+			} else {
+				statuses[i].Source = src;
 			}
 			user := status.Get("user");
 			uid := user.Get("id").String();

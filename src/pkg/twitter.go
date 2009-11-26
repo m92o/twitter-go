@@ -138,6 +138,27 @@ func (self *Twitter) RateLimitStatus(ipRate bool) (rate Rate, err os.Error) {
 	return;
 }
 
+// statuses show
+func (self *Twitter) Show(id string) (status Status, err os.Error) {
+	path := fmt.Sprintf("/statuses/show/%s.json", id);
+
+	res, err := request(GET, HOST, path, "", self.Username, self.Password, self.useSsl);
+	if res.StatusCode != 200 {
+		err = os.ErrorString(res.Status);
+		return;
+	}
+
+	// response body
+	if body, err := io.ReadAll(res.Body); err == nil {
+		// status
+		js, _, _ := json.StringToJson(string(body));
+		status = parseStatus(js);
+	}
+	res.Body.Close();
+
+	return;
+}
+
 // statuses update（つぶやき）
 func (self *Twitter) Update(message string) (err os.Error) {
 	const (
@@ -150,6 +171,21 @@ func (self *Twitter) Update(message string) (err os.Error) {
 	body := param + encode(message);
 
 	res, err := request(POST, HOST, path, body, self.Username, self.Password, self.useSsl);
+	if res.StatusCode != 200 {
+		err = os.ErrorString(res.Status);
+		return;
+	}
+
+	res.Body.Close();
+
+	return;
+}
+
+// statuses destroy
+func (self *Twitter) Destroy(id string) (err os.Error) {
+	path := fmt.Sprintf("/statuses/destroy/%s.json", id);
+
+	res, err := request(DELETE, HOST, path, "", self.Username, self.Password, self.useSsl);
 	if res.StatusCode != 200 {
 		err = os.ErrorString(res.Status);
 		return;
@@ -232,7 +268,7 @@ const (
 // GET lists
 //  user --- UserId or ScreenName
 func (self *Twitter) GetLists(user string, options map[string] int) (lists []List, err os.Error) {
-	path := fmt.Sprintf("/1/%s/lists.json", user);
+	path := fmt.Sprintf("/%s/lists.json", user);
 
 	// option parameters
 	if options != nil {
@@ -273,7 +309,7 @@ const (
 //  user --- UserId or ScreenName
 //  list --- ListId or ListName
 func (self *Twitter) ListStatuses(user, list string, options map[string] uint) (statuses []Status, users map[string] User, err os.Error) {
-	path := fmt.Sprintf("/1/%s/lists/%s/statuses.json", user, list);
+	path := fmt.Sprintf("/%s/lists/%s/statuses.json", user, list);
 
 	return self.timeline(path, options, self.Username, self.Password, self.useSsl);
 }
@@ -358,6 +394,7 @@ func send(req *http.Request) (res *http.Response, err os.Error) {
 const (
 	GET = iota;
 	POST;
+	DELETE;
 )
 const HOST = "twitter.com";
 // http request
@@ -384,6 +421,8 @@ func request(method int, host, path, body, user, pass string, useSsl bool) (res 
 		req.Method = "GET";
 	case POST:
 		req.Method = "POST";
+	case DELETE:
+		req.Method = "DELETE";
 	default:
 		return nil, os.NewError("invalid method");
 	}
@@ -458,28 +497,36 @@ func (self *Twitter) timeline(path string, options map[string] uint, user, pass 
 		js, _, _ := json.StringToJson(string(body));
 		statuses = make([]Status, js.Len());
 		users = make(map[string] User);
-		re, _ := regexp.Compile("<a[^>]*>(.*)</a>");
 		for i := 0; i < js.Len(); i++ {
 			// status
 			status := js.Elem(i);
-			statuses[i].CreatedAt = status.Get("created_at").String();
-			statuses[i].Id = status.Get("id").String();
-			statuses[i].Text = status.Get("text").String();
-			src := status.Get("source").String();
-			if srcs := re.MatchStrings(src); len(srcs) == 2 {
-				statuses[i].Source = srcs[1];
-			} else {
-				statuses[i].Source = src;
-			}
-			user := status.Get("user");
-			uid := user.Get("id").String();
-			statuses[i].UserId = uid;
+			statuses[i] = parseStatus(status);
 
 			// user
-			users["uid"] = parseUser(user);
+			user := status.Get("user");
+			users[statuses[i].UserId] = parseUser(user);
 		}
 	}
 	res.Body.Close();
+
+	return;
+}
+
+// statusパース
+func parseStatus(elem json.Json) (status Status) {
+	status.CreatedAt = elem.Get("created_at").String();
+	status.Id = elem.Get("id").String();
+	status.Text = elem.Get("text").String();
+
+	re, _ := regexp.Compile("<a[^>]*>(.*)</a>");
+	src := elem.Get("source").String();
+	if srcs := re.MatchStrings(src); len(srcs) == 2 {
+		status.Source = srcs[1];
+	} else {
+		status.Source = src;
+	}
+
+	status.UserId = elem.Get("user").Get("id").String();
 
 	return;
 }

@@ -19,7 +19,9 @@
   - mentions
 
  - ステータス
+  - show
   - update
+  - destroy
 
  - アカウント
   - verify credentials
@@ -57,8 +59,14 @@
   statuses, users := t.UserTimeline(nil);
   statuses, users := t.Mentions(nil);
 
- - アップテート（つぶやく）
+ - ステータス
+  t.Show("メッセージID");
+
+ - アップデート（つぶやく）
 　t.Update("メッセージ");
+
+ - 削除
+  t.Destroy("メッセージID");
 
  - リスト一覧取得
   lists := t.GetList(userId);

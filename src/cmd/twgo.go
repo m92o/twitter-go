@@ -23,6 +23,7 @@ func main() {
 	var users []twitter.User;
 //	var users map[string] twitter.User;
 	var rate twitter.Rate;
+	var status twitter.Status;
 
 	flag.Parse();
 
@@ -34,8 +35,14 @@ func main() {
 	tw := twitter.NewTwitter(acc.user, acc.password, false);
 
 	switch flag.Arg(0) {
+	case "show":
+		if status, err = tw.Show(flag.Arg(1)); err == nil {
+			showStatus(status);
+		}
 	case "update":
 		err = tw.Update(flag.Arg(1));
+	case "destroy":
+		err = tw.Destroy(flag.Arg(1));
 	case "friends":
 		if statuses, _, err = tw.FriendsTimeline(nil); err == nil {
 			showTimeline(statuses);
@@ -79,6 +86,8 @@ func main() {
 		if users, err = tw.UsersSearch(flag.Arg(1), nil); err == nil {
 			showUsers(users);
 		}
+	default:
+		err = os.ErrorString("Not supported")
 	}
 
 	if err != nil {
@@ -141,6 +150,14 @@ func showRate(r twitter.Rate) {
 	fmt.Printf("HourlyLimit: %d\n", r.HourlyLimit);
 	fmt.Printf("ResetTime: %s\n", r.ResetTime);
 	fmt.Printf("ResetTimeInSeconds: %d\n", r.ResetTimeInSeconds);
+}
+
+func showStatus(s twitter.Status) {
+	fmt.Printf("Id: %s\n", s.Id);
+	fmt.Printf("Text: %s\n", s.Text);
+	fmt.Printf("CreatedAt: %s\n", s.CreatedAt);
+	fmt.Printf("Source: %s\n", s.Source);
+	fmt.Printf("UserId: %s\n", s.UserId);
 }
 
 func showLists(lists []twitter.List) {

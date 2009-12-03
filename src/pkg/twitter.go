@@ -12,6 +12,7 @@ import (
 	"net";
 	"http";
 	"io";
+	"io/ioutil";
 	"bufio";
 	"strconv";
 	"strings";
@@ -22,56 +23,55 @@ import (
 	"encoding/base64";
 )
 
-// ユーザ情報 (全部stringにしちゃったけど良い?)
+// ユーザ情報
 type User struct {
-	Id string;
+	Id uint64;
 	Name string;
-	ScreenName string;
+	Screen_Name string;
 	Location string;
 	Description string;
-	ProfileImageUrl string;
+	Profile_Image_Url string;
 	Url string;
-	Protected string;
-	FollowersCount string;
-	FriendsCount string;
-	FavouritesCount string;
-	UtcOffset string;
-	TimeZone string;
-	StatusesCount string;
+	Protected bool;
+	Followers_Count uint;
+	Friends_Count uint;
+	Favourites_Count uint;
+	Utc_Offset int;
+	Time_Zone string;
+	Statuses_Count uint;
 }
 
 // ステータス情報 (全部stringにしちゃったけど良い?)
 type Status struct {
-	CreatedAt string;
-	Id string;
+	Created_At string;
+	Id uint64;
 	Text string;
 	Source string;
-	UserId string;
+	User User;
 }
 
 // List情報 (全部stringにしちゃったけど良い?)
 type List struct {
-	Id string;
+	Id uint64;
 	Name string;
-	FullName string;
+	Full_Name string;
 	Slug string;
 	Description string;
-	MemberCount string;
+	Member_Count uint;
 	Uri string;
-	Mode string;
-	UserId string;
+	Mode bool;
+	User User;
 }
 
 // Twitter情報
 type Twitter struct {
 	Username string;
 	Password string;
-	UserId string;
 	useSsl bool;
 }
 // コンストラクタ
 func NewTwitter(user, pass string, useSsl bool) *Twitter {
-	return &Twitter{user, pass, "", useSsl};
+	return &Twitter{user, pass, useSsl};
 }
 
 // verify credentials（自分のユーザ情報を取得したい時など）
@@ -85,12 +85,14 @@ func (self *Twitter) VerifyCredentials() (user User, err os.Error) {
 	}
 
 	// response body
-	if body, err := io.ReadAll(res.Body); err == nil {
+	if body, err := ioutil.ReadAll(res.Body); err == nil {
 		// user
-		js, _, _ := json.StringToJson(string(body));
-		self.UserId = js.Get("id").String();
-
-		user = parseUser(js);
+		var u User;
+		if ok, errtok := json.Unmarshal(string(body), &u); ok == true {
+			user = u;
+		} else {
+			err = os.ErrorString(errtok);
+		}
 	}
 	res.Body.Close();
 
@@ -98,10 +100,10 @@ func (self *Twitter) VerifyCredentials() (user User, err os.Error) {
 }
 
 type Rate struct {
-	RemainingHits uint;
-	HourlyLimit uint;
-	ResetTime string;
-	ResetTimeInSeconds uint;
+	Remaining_Hits uint;
+	Hourly_Limit uint;
+	Reset_Time string;
+	Reset_Time_In_Seconds uint;
 }
 // rate limit status
 func (self *Twitter) RateLimitStatus(ipRate bool) (rate Rate, err os.Error) {
@@ -125,13 +127,14 @@ func (self *Twitter) RateLimitStatus(ipRate bool) (rate Rate, err os.Error) {
 	}
 
 	// response body
-	if body, err := io.ReadAll(res.Body); err == nil {
+	if body, err := ioutil.ReadAll(res.Body); err == nil {
 		// rate limit
-		js, _, _ := json.StringToJson(string(body));
-		rate.RemainingHits, _ = strconv.Atoui(js.Get("remaining_hits").String());
-		rate.HourlyLimit, _ = strconv.Atoui(js.Get("hourly_limit").String());
-		rate.ResetTime = js.Get("reset_time").String();
-		rate.ResetTimeInSeconds, _ = strconv.Atoui(js.Get("reset_time_in_seconds").String());
+		var r Rate;
+		if ok, errtok := json.Unmarshal(string(body), &r); ok == true {
+			rate = r;
+		} else {
+			err = os.ErrorString(errtok);
+		}
 	}
 	res.Body.Close();
 
@@ -149,10 +152,20 @@ func (self *Twitter) Show(id string) (status Status, err os.Error) {
 	}
 
 	// response body
-	if body, err := io.ReadAll(res.Body); err == nil {
+	if body, err := ioutil.ReadAll(res.Body); err == nil {
 		// status
-		js, _, _ := json.StringToJson(string(body));
-		status = parseStatus(js);
+		var s Status;
+		if ok, errtok := json.Unmarshal(string(body), &s); ok == true {
+			// source
+			re, _ := regexp.Compile("<a[^>]*>(.*)</a>");
+			if srcs := re.MatchStrings(s.Source); len(srcs) == 2 {
+				s.Source = srcs[1];
+			}
+
+			status = s;
+		} else {
+			err = os.ErrorString(errtok);
+		}
 	}
 	res.Body.Close();
 
@@ -197,7 +210,7 @@ func (self *Twitter) Destroy(id string) (err os.Error) {
 }
 
 // statuses friends_timeline
-func (self *Twitter) PublicTimeline() (statuses []Status, users map[string] User, err os.Error) {
+func (self *Twitter) PublicTimeline() (statuses []Status, err os.Error) {
 	const path = "/statuses/public_timeline.json";
 
 	return self.timeline(path, nil, "", "", self.useSsl);
@@ -211,7 +224,7 @@ const (
 	OPTION_HomeTimeline_Page = "?page=";
 )
 // statuses home_timeline
-func (self *Twitter) HomeTimeline(options map[string] uint) (statuses []Status, users map[string] User, err os.Error) {
+func (self *Twitter) HomeTimeline(options map[string] uint) (statuses []Status, err os.Error) {
 	const path = "/statuses/home_timeline.json";
 
 	return self.timeline(path, options, self.Username, self.Password, self.useSsl);
@@ -225,7 +238,7 @@ const (
 	OPTION_FriendsTimeline_Page = "?page=";
 )
 // statuses friends_timeline
-func (self *Twitter) FriendsTimeline(options map[string] uint) (statuses []Status, users map[string] User, err os.Error) {
+func (self *Twitter) FriendsTimeline(options map[string] uint) (statuses []Status, err os.Error) {
 	const path = "/statuses/friends_timeline.json";
 
 	return self.timeline(path, options, self.Username, self.Password, self.useSsl);
@@ -241,7 +254,7 @@ const (
 	OPTION_UserTimeline_Page = "?page=";
 )
 // statuses user_timeline
-func (self *Twitter) UserTimeline(options map[string] uint) (statuses []Status, users map[string] User, err os.Error) {
+func (self *Twitter) UserTimeline(options map[string] uint) (statuses []Status, err os.Error) {
 	const path = "/statuses/user_timeline.json";
 
 	return self.timeline(path, options, self.Username, self.Password, self.useSsl);
@@ -255,7 +268,7 @@ const (
 	OPTION_Mentions_Page = "?page=";
 )
 // statuses mentions
-func (self *Twitter) Mentions(options map[string] uint) (statuses []Status, users map[string] User, err os.Error) {
+func (self *Twitter) Mentions(options map[string] uint) (statuses []Status, err os.Error) {
 	const path = "/statuses/mentions.json";
 
 	return self.timeline(path, options, self.Username, self.Password, self.useSsl);
@@ -284,13 +297,12 @@ func (self *Twitter) GetLists(user string, options map[string] int) (lists []Lis
 	}
 
 	// response body
-	if body, err := io.ReadAll(res.Body); err == nil {
-		js, _, _ := json.StringToJson(string(body));
-		ls := js.Get("lists");
-		lists = make([]List, ls.Len());
-		for i := 0; i < ls.Len(); i++ {
-			// list
-			lists[i] = parseList(ls.Elem(i));
+	if body, err := ioutil.ReadAll(res.Body); err == nil {
+		var l []List;
+		if ok, errtok := json.Unmarshal(string(body), &l); ok == true {
+			lists = l;
+		} else {
+			err = os.ErrorString(errtok);
 		}
 	}
 	res.Body.Close();
@@ -308,7 +320,7 @@ const (
 // statuses mentions
 //  user --- UserId or ScreenName
 //  list --- ListId or ListName
-func (self *Twitter) ListStatuses(user, list string, options map[string] uint) (statuses []Status, users map[string] User, err os.Error) {
+func (self *Twitter) ListStatuses(user, list string, options map[string] uint) (statuses []Status, err os.Error) {
 	path := fmt.Sprintf("/%s/lists/%s/statuses.json", user, list);
 
 	return self.timeline(path, options, self.Username, self.Password, self.useSsl);
@@ -337,11 +349,12 @@ func (self *Twitter) UsersSearch(user string, options map[string] uint) (users [
 	}
 
 	// response body
-	if body, err := io.ReadAll(res.Body); err == nil {
-		js, _, _ := json.StringToJson(string(body));
-		users = make([]User, js.Len());
-		for i := 0; i < js.Len(); i++ {
-			users[i] = parseUser(js.Elem(i));
+	if body, err := ioutil.ReadAll(res.Body); err == nil {
+		var u []User;
+		if ok, errtok := json.Unmarshal(string(body), &u); ok == true {
+			users = u;
+		} else {
+			err = os.ErrorString(errtok);
 		}
 	}
 	res.Body.Close();
@@ -476,7 +489,7 @@ func encode(str string) (enc string) {
 }
 
 // timeline取得
-func (self *Twitter) timeline(path string, options map[string] uint, user, pass string, useSsl bool) (statuses []Status, users map[string] User, err os.Error) {
+func (self *Twitter) timeline(path string, options map[string] uint, user, pass string, useSsl bool) (statuses []Status, err os.Error) {
 	optpath := path;
 
 	// option parameters
@@ -493,75 +506,23 @@ func (self *Twitter) timeline(path string, options map[string] uint, user, pass 
 	}
 
 	// response body
-	if body, err := io.ReadAll(res.Body); err == nil {
-		js, _, _ := json.StringToJson(string(body));
-		statuses = make([]Status, js.Len());
-		users = make(map[string] User);
-		for i := 0; i < js.Len(); i++ {
-			// status
-			status := js.Elem(i);
-			statuses[i] = parseStatus(status);
+	if body, err := ioutil.ReadAll(res.Body); err == nil {
+		var s []Status;
+		if ok, errtok := json.Unmarshal(string(body), &s); ok == true {
+			// source
+			re, _ := regexp.Compile("<a[^>]*>(.*)</a>");
+			for i, sts := range s {
+				if srcs := re.MatchStrings(sts.Source); len(srcs) == 2 {
+					s[i].Source = srcs[1];
+				}
+			}
 
-			// user
-			user := status.Get("user");
-			users[statuses[i].UserId] = parseUser(user);
+			statuses = s;
+		} else {
+			err = os.ErrorString(errtok);
 		}
 	}
 	res.Body.Close();
-
-	return;
-}
-
-// statusパース
-func parseStatus(elem json.Json) (status Status) {
-	status.CreatedAt = elem.Get("created_at").String();
-	status.Id = elem.Get("id").String();
-	status.Text = elem.Get("text").String();
-
-	re, _ := regexp.Compile("<a[^>]*>(.*)</a>");
-	src := elem.Get("source").String();
-	if srcs := re.MatchStrings(src); len(srcs) == 2 {
-		status.Source = srcs[1];
-	} else {
-		status.Source = src;
-	}
-
-	status.UserId = elem.Get("user").Get("id").String();
-
-	return;
-}
-
-// Listパース
-func parseList(elem json.Json) (list List) {
-	list.Id = elem.Get("id").String();
-	list.Name = elem.Get("name").String();
-	list.FullName = elem.Get("full_name").String();
-	list.Description = elem.Get("description").String();
-	list.Slug = elem.Get("slug").String();
-	list.MemberCount = elem.Get("member_count").String();
-	list.Uri = elem.Get("uri").String();
-	list.Mode = elem.Get("mode").String();
-	list.UserId = elem.Get("user").Get("id").String();
-
-	return;
-}
-
-// Userパース
-func parseUser(elem json.Json) (user User) {
-	user.Id = elem.Get("id").String();
-	user.Name = elem.Get("name").String();
-	user.ScreenName = elem.Get("screen_name").String();
-	user.Location = elem.Get("location").String();
-	user.Description = elem.Get("description").String();
-	user.ProfileImageUrl = elem.Get("profile_image_url").String();
-	user.Url = elem.Get("url").String();
-	user.Protected = elem.Get("protected").String();
-	user.FollowersCount = elem.Get("followers_count").String();
-	user.FriendsCount = elem.Get("friends_count").String();
-	user.FavouritesCount = elem.Get("favourites_count").String();
-	user.UtcOffset = elem.Get("utc_offset").String();
-	user.TimeZone = elem.Get("time_zone").String();
-	user.StatusesCount = elem.Get("statuses_count").String();
 
 	return;
 }

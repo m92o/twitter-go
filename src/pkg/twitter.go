@@ -41,7 +41,7 @@ type User struct {
 	Statuses_Count uint;
 }
 
-// ステータス情報 (全部stringにしちゃったけど良い?)
+// ステータス情報
 type Status struct {
 	Created_At string;
 	Id uint64;
@@ -50,7 +50,7 @@ type Status struct {
 	User User;
 }
 
-// List情報 (全部stringにしちゃったけど良い?)
+// List情報
 type List struct {
 	Id uint64;
 	Name string;
@@ -99,6 +99,7 @@ func (self *Twitter) VerifyCredentials() (user User, err os.Error) {
 	return;
 }
 
+// レート情報
 type Rate struct {
 	Remaining_Hits uint;
 	Hourly_Limit uint;
@@ -179,9 +180,8 @@ func (self *Twitter) Update(message string) (err os.Error) {
 		param = "status=";
 	)
 
-// http.URLEscapeはバグってて日本語をエスケープしない
-//	body := param + http.URLEscape(message);
-	body := param + encode(message);
+	// body
+	body := param + http.URLEscape(message);
 
 	res, err := request(POST, HOST, path, body, self.Username, self.Password, self.useSsl);
 	if res.StatusCode != 200 {
@@ -391,10 +391,14 @@ func send(req *http.Request) (res *http.Response, err os.Error) {
 	}
 
 	r := io.Reader(reader);
-	if v := res.GetHeader("Content-Length"); v != "" {
+	if v := res.GetHeader("Transfer-Encoding"); v == "chunked" {
+		// 現状はchunkedで返ってくることはないので、未サポートにしておく
+		conn.Close();
+		return nil, os.NewError("chunked is not implemented yet.");
+	} else if v := res.GetHeader("Content-Length"); v != "" {
 		n, err := strconv.Atoi64(v);
 		if err != nil {
-			return nil, err;
+			return nil, os.NewError("invalid Content-Length");
 		}
 		r = io.LimitReader(r, n);
 	}
@@ -466,28 +470,6 @@ func request(method int, host, path, body, user, pass string, useSsl bool) (res 
 	return send(&req);
 }
 
-// http.URLEscapeが直るまでの代わり
-func encode(str string) (enc string) {
-    var s = "";
-    for pos, char := range str {
-		switch {
-        case char <= 0x007f:
-            s = fmt.Sprintf("%c", str[pos]);
-		case char >= 0x0080 && char <= 0x07ff:
-            b0 := char & 0x07c0 >> 6 + 0xc0;
-            b1 := char & 0x003f + 0x80;
-            s = fmt.Sprintf("%%%x%%%x", b0, b1);
-		case char >= 0x0800 && char <= 0xffff:
-            b0 := char & 0xf000 >> 12 + 0xe0;
-            b1 := char & 0x0fc0 >> 6 + 0x80;
-            b2 := char & 0x003f + 0x80;
-            s = fmt.Sprintf("%%%x%%%x%%%x", b0, b1, b2);
-		}
-        enc += s;
-    }
-    return enc;
-}
-
 // timeline取得
 func (self *Twitter) timeline(path string, options map[string] uint, user, pass string, useSsl bool) (statuses []Status, err os.Error) {
 	optpath := path;
@@ -516,7 +498,6 @@ func (self *Twitter) timeline(path string, options map[string] uint, user, pass 
 					s[i].Source = srcs[1];
 				}
 			}
-
 			statuses = s;
 		} else {
 			err = os.ErrorString(errtok);

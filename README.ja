@@ -44,41 +44,41 @@
 
 使い方
  - パッケージのインポート
-  import "twitter";
+  import "twitter"
 
  - 初期化
-  t := twitter.NewTwitter("USERNAME", "PASSWORD", false);
+  t := twitter.NewTwitter("USERNAME", "PASSWORD", false)
 
  - 自分のユーザ情報取得
-  user := t.VerifyCredentials();
+  user := t.VerifyCredentials()
 
  - タイムライン取得
-  statuses, users := t.PublicTimeline();
-  statuses, users := t.FriendsTimeline(nil);
-  statuses, users := t.HomeTimeline(nil);
-  statuses, users := t.UserTimeline(nil);
-  statuses, users := t.Mentions(nil);
+  statuses, users := t.PublicTimeline()
+  statuses, users := t.FriendsTimeline(nil)
+  statuses, users := t.HomeTimeline(nil)
+  statuses, users := t.UserTimeline(nil)
+  statuses, users := t.Mentions(nil)
 
  - ステータス
-  t.Show("メッセージID");
+  t.Show("メッセージID")
 
  - アップデート（つぶやく）
-　t.Update("メッセージ");
+　t.Update("メッセージ")
 
  - 削除
-  t.Destroy("メッセージID");
+  t.Destroy("メッセージID")
 
  - リスト一覧取得
-  lists := t.GetList(userId);
+  lists := t.GetList(userId)
 
  - リストステータス取得（タイムライン）
-  statuses, users := t.GetLists(userId, listId, nil);
+  statuses, users := t.GetLists(userId, listId, nil)
 
  - ユーザサーチ
-  users := t.UsersSearch(user, nil);
+  users := t.UsersSearch(user, nil)
 
  - リミットステータス
-  rate := t.RateLimitStatus(false);
+  rate := t.RateLimitStatus(false)
 
 サンプルプログラム
  src/cmd/twgo.go (twgoコマンド)
